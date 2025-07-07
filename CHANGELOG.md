@@ -1,5 +1,10 @@
 ## Changelog
 
+## 0.2.2
+- Updated the README.md
+- Expanded DOCX viewer widget to support loading documents from a file path, a file object, or raw bytes, providing greater flexibility for users.
+- Updated to read only docx files.
+
 ## 0.2.1
 - Updated the README.md
 - Added the Handeling of the File From the Internet or Network too.

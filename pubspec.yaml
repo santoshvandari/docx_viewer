@@ -1,8 +1,8 @@
 name: docx_viewer
 description: A Flutter package which allows you to view Docx/Doc document format for Android.
-version: 0.2.1
-homepage: https://github.com/santoshvandari/docx_viewer
-repository: https://github.com/santoshvandari/docx_viewer
+version: 0.2.2
+homepage: https://github.com/mechimavericks/docx_viewer
+repository: https://github.com/mechimavericks/docx_viewer
 documentation: https://pub.dev/packages/docx_viewer
 environment:
   sdk: ^3.5.4
