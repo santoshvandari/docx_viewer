@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'dart:io';
+
 import 'package:docx_viewer/src/extract_text_from_docx.dart';
 import 'package:docx_viewer/utils/support_type.dart';
 import 'package:flutter/material.dart';
@@ -12,23 +14,32 @@ import 'package:http/http.dart' as http;
 /// Supported document types:
 /// - DOCX: Displayed as text after converting from DOCX binary format using the [docx_to_text] package.
 ///
-/// Example usage:
+/// Examples usages:
 /// ```dart
 /// DocxView(filePath: '/path/to/your/document.docx')
+/// DocxView(file: docxFile)
+/// DocxView(bytes: docxBytes)
 /// ```
 class DocxView extends StatefulWidget {
-  final String filePath; // The path to the DOCX file or URL
+  final String? filePath; // The path to the DOCX file or URL
+  final File? file; // The DOCX file
+  final Uint8List? bytes; // The bytes of one DOCX file
   final int fontSize; // Optional font size for displaying the text
   final Function(Exception)? onError; // Optional callback for handling errors
 
   /// Creates a [DocxView] widget.
   ///
-  /// [filePath] is required, representing the path or URL of the DOCX file to display.
+  /// Required to define filePath or file or bytes`
+  /// [filePath] representing the path or URL of the DOCX file to display.
+  /// [file] the file to display
+  /// [bytes] docx bytes to display
   /// [fontSize] is optional and defaults to 16 if not specified.
   /// [onError] is an optional callback for handling errors.
   const DocxView({
     super.key,
-    required this.filePath,
+    this.filePath,
+    this.file,
+    this.bytes,
     this.fontSize = 16,
     this.onError,
   });
@@ -51,23 +62,48 @@ class _DocxViewState extends State<DocxView> {
   /// Validates the file path, determines if it's a network or local file, and loads the DOCX content.
   Future<void> _validateAndLoadDocxContent() async {
     // Check if the file path is empty
-    if (widget.filePath.isEmpty) {
-      _handleError(Exception("File path is empty."));
+    if ((widget.filePath == null || widget.filePath!.isEmpty) &&
+    	widget.file == null && widget.bytes == null) {
+      _handleError(Exception("No input provided. You must specify either filePath, file, or bytes."));
+      return;
+    }
+
+    // Ensure that only one of the three parameters bytes, file or filePath is provided.
+    if (((widget.bytes != null) && (widget.file != null || widget.filePath != null)) ||
+        ((widget.file != null) && (widget.filePath != null))) {
+      _handleError(Exception("Define only filePath, file or bytes"));
       return;
     }
 
     // Check if the filePath is a network URL or a local file path
-    if (widget.filePath.startsWith('http')) {
+    if (widget.filePath != null && widget.filePath!.startsWith('http')) {
       // Load content from a network file
-      await _loadDocxContentFromNetwork(widget.filePath);
-    } else {
+      await _loadDocxContentFromNetwork(widget.filePath!);
+    } else if (widget.bytes != null){
+      // Extract Text directly from bytes
+      await _loadDocxBytesContent(widget.bytes!);
+    }
+    else {
       // Load content from a local file
-      final file = File(widget.filePath);
+      final file = widget.file ?? File(widget.filePath!);
       if (!(await file.exists())) {
         _handleError(Exception("File not found: ${widget.filePath}"));
         return;
       }
       await _loadDocxContent(file);
+    }
+  }
+
+  /// Loads the content from bytes of Docx file stored locally
+  Future<void> _loadDocxBytesContent(Uint8List bytes) async {
+    try {
+      final content = extractTextFromDocxBytes(bytes);
+      setState(() {
+        fileContent = content;
+        isLoading = false;
+      });
+    } catch (e) {
+      _handleError(Exception("Error reading file: ${e.toString()}"));
     }
   }
 

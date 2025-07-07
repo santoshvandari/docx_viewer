@@ -1,4 +1,3 @@
-
 # Docx_Viewer
 
 A Flutter package for displaying DOCX files as text in your app. This package uses the `docx_to_text` package to read DOCX files and display their content as text.
@@ -48,8 +47,11 @@ void main() {
 }
 ```
 
-### Parameters:
-- `filePath`: The path to the DOCX file to display (required).
+### Parameters
+##### You must provide either `filePath`, `file`, or `bytes`
+- `filePath`: The path to the DOCX file to display.
+- `file`: The DOCX file to display.
+- `bytes`: DOCX bytes to display.
 - `fontSize`: The font size for displaying the text (optional, default is 16).
 - `onError`: A callback to handle errors if the file can't be loaded (optional).
 
@@ -84,4 +86,3 @@ If you find this package helpful and would like to support its development, cons
 
 
 ### Thank you for your support!
-

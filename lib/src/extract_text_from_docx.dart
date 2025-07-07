@@ -1,14 +1,20 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:xml/xml.dart' as xml;
 import 'dart:convert';
 
-/// Extracts text content from a DOCX file.
+/// Read bytes in file and send it to become ZIP archive
 String extractTextFromDocx(File file) {
+    return extractTextFromDocxBytes(file.readAsBytesSync());
+}
+
+/// Extracts text content from a DOCX file.
+String extractTextFromDocxBytes(Uint8List bytes) {
   final List<String> extractedText = [];
 
-  // Read and decode the DOCX file as a ZIP archive
-  final archive = ZipDecoder().decodeBytes(file.readAsBytesSync());
+  // Decode the DOCX bytes as a ZIP archive
+  final archive = ZipDecoder().decodeBytes(bytes);
 
   // Find the main document file in the DOCX archive
   final documentFile = archive.files.firstWhere(
