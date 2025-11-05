@@ -7,15 +7,17 @@ class FileIO {
   /// Users should use the bytes parameter or network URLs instead.
   static Future<Uint8List> readFileBytes(String path) async {
     throw UnsupportedError(
-        'Direct file path access is not supported on web. '
-        'Please use the "bytes" parameter with a file picker, '
-        'or provide a network URL.');
+      'Direct file path access is not supported on web. '
+      'Please use the "bytes" parameter with a file picker, '
+      'or provide a network URL.',
+    );
   }
 
   /// On web, direct file system access is not supported.
   static Future<bool> fileExists(String path) async {
     throw UnsupportedError(
-        'File system access is not supported on web. '
-        'Please use the "bytes" parameter or network URLs.');
+      'File system access is not supported on web. '
+      'Please use the "bytes" parameter or network URLs.',
+    );
   }
 }

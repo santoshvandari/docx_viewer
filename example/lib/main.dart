@@ -15,10 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'DOCX Viewer Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
       home: const DocumentViewerPage(),
     );
   }
@@ -140,13 +137,15 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                   'Running on: ${kIsWeb ? "Web Platform" : "Mobile/Desktop Platform"}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: kIsWeb ? Colors.blue.shade900 : Colors.green.shade900,
+                    color: kIsWeb
+                        ? Colors.blue.shade900
+                        : Colors.green.shade900,
                   ),
                 ),
               ],
             ),
           ),
-          
+
           // Error message
           if (errorMessage != null)
             Container(
@@ -217,7 +216,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 32),
-                          
+
                           // Pick file button
                           ElevatedButton.icon(
                             onPressed: pickFile,
@@ -230,11 +229,11 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                               ),
                             ),
                           ),
-                          
+
                           const SizedBox(height: 16),
                           const Text("— OR —"),
                           const SizedBox(height: 16),
-                          
+
                           // Load network example button
                           OutlinedButton.icon(
                             onPressed: loadNetworkExample,
@@ -247,9 +246,9 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                               ),
                             ),
                           ),
-                          
+
                           const SizedBox(height: 32),
-                          
+
                           // Platform-specific info
                           Container(
                             padding: const EdgeInsets.all(16),
@@ -282,7 +281,9 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                                 if (kIsWeb) ...[
                                   const Text("✓ File picker with bytes"),
                                   const Text("✓ Network URLs"),
-                                  const Text("✗ Direct file paths (not supported)"),
+                                  const Text(
+                                    "✗ Direct file paths (not supported)",
+                                  ),
                                 ] else ...[
                                   const Text("✓ File picker with paths"),
                                   const Text("✓ Network URLs"),

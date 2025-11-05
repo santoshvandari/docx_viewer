@@ -27,16 +27,19 @@ import 'file_io_stub.dart'
 /// ```dart
 /// // Local file (mobile/desktop only)
 /// DocxView(filePath: '/path/to/your/document.docx')
-/// 
+///
 /// // Network URL (all platforms)
 /// DocxView(filePath: 'https://example.com/document.docx')
-/// 
+///
 /// // Bytes from file picker (all platforms, recommended for web)
 /// DocxView(bytes: docxBytes)
 /// ```
 class DocxView extends StatefulWidget {
-  final String? filePath; // The path to the DOCX file or URL (local paths not supported on web)
-  @Deprecated('Use filePath or bytes instead. This parameter will be removed in a future version.')
+  final String?
+  filePath; // The path to the DOCX file or URL (local paths not supported on web)
+  @Deprecated(
+    'Use filePath or bytes instead. This parameter will be removed in a future version.',
+  )
   final dynamic file; // Deprecated: The DOCX file (not supported on web)
   final Uint8List? bytes; // The bytes of a DOCX file (recommended for web)
   final int fontSize; // Optional font size for displaying the text
@@ -78,13 +81,19 @@ class _DocxViewState extends State<DocxView> {
   Future<void> _validateAndLoadDocxContent() async {
     // Check if any input is provided
     if ((widget.filePath == null || widget.filePath!.isEmpty) &&
-        widget.file == null && widget.bytes == null) {
-      _handleError(Exception("No input provided. You must specify either filePath or bytes."));
+        widget.file == null &&
+        widget.bytes == null) {
+      _handleError(
+        Exception(
+          "No input provided. You must specify either filePath or bytes.",
+        ),
+      );
       return;
     }
 
     // Ensure that only one of the parameters is provided
-    if (((widget.bytes != null) && (widget.file != null || widget.filePath != null)) ||
+    if (((widget.bytes != null) &&
+            (widget.file != null || widget.filePath != null)) ||
         ((widget.file != null) && (widget.filePath != null))) {
       _handleError(Exception("Define only one of: filePath, file, or bytes"));
       return;
@@ -105,18 +114,24 @@ class _DocxViewState extends State<DocxView> {
     // Handle local file paths
     if (kIsWeb) {
       // On web, local file paths are not supported
-      _handleError(Exception(
+      _handleError(
+        Exception(
           "Direct file path access is not supported on web. "
           "Please use 'bytes' parameter with a file picker package "
-          "(e.g., file_picker) or provide a network URL."));
+          "(e.g., file_picker) or provide a network URL.",
+        ),
+      );
       return;
     }
 
     // Load from local file path (mobile/desktop only)
     if (widget.file != null) {
       // Deprecated file parameter
-      _handleError(Exception(
-          "The 'file' parameter is deprecated. Please use 'filePath' or 'bytes' instead."));
+      _handleError(
+        Exception(
+          "The 'file' parameter is deprecated. Please use 'filePath' or 'bytes' instead.",
+        ),
+      );
       return;
     }
 
@@ -179,8 +194,11 @@ class _DocxViewState extends State<DocxView> {
         // Process bytes directly without writing to temp file (web-compatible)
         await _loadDocxBytesContent(response.bodyBytes);
       } else {
-        _handleError(Exception(
-            "Failed to load file from network. Status code: ${response.statusCode}"));
+        _handleError(
+          Exception(
+            "Failed to load file from network. Status code: ${response.statusCode}",
+          ),
+        );
       }
     } catch (e) {
       _handleError(Exception("Error downloading file: ${e.toString()}"));
