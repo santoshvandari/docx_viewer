@@ -1,44 +1,59 @@
 import 'dart:typed_data';
-import 'dart:io';
 
 import 'package:docx_viewer/src/extract_text_from_docx.dart';
 import 'package:docx_viewer/utils/support_type.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-/// A widget for displaying Word documents, includingand .docx file types.
+// Conditional imports for platform-specific file operations
+import 'file_io_stub.dart'
+    if (dart.library.io) 'file_io_mobile.dart'
+    if (dart.library.html) 'file_io_web.dart';
+
+/// A widget for displaying Word documents, including .docx file types.
 ///
 /// The [DocxView] widget takes a [filePath], an optional [fontSize], and an optional [onError] callback function.
 /// It reads the content of the DOCX file and displays it as text within a Flutter application.
 ///
 /// Supported document types:
-/// - DOCX: Displayed as text after converting from DOCX binary format using the [docx_to_text] package.
+/// - DOCX: Displayed as text after converting from DOCX binary format.
 ///
-/// Examples usages:
+/// Platform Support:
+/// - **Mobile/Desktop**: Supports [filePath] (local paths and network URLs) and [bytes]
+/// - **Web**: Supports [bytes] (use with file picker) and [filePath] (network URLs only)
+///
+/// Example usages:
 /// ```dart
+/// // Local file (mobile/desktop only)
 /// DocxView(filePath: '/path/to/your/document.docx')
-/// DocxView(file: docxFile)
+/// 
+/// // Network URL (all platforms)
+/// DocxView(filePath: 'https://example.com/document.docx')
+/// 
+/// // Bytes from file picker (all platforms, recommended for web)
 /// DocxView(bytes: docxBytes)
 /// ```
 class DocxView extends StatefulWidget {
-  final String? filePath; // The path to the DOCX file or URL
-  final File? file; // The DOCX file
-  final Uint8List? bytes; // The bytes of one DOCX file
+  final String? filePath; // The path to the DOCX file or URL (local paths not supported on web)
+  @Deprecated('Use filePath or bytes instead. This parameter will be removed in a future version.')
+  final dynamic file; // Deprecated: The DOCX file (not supported on web)
+  final Uint8List? bytes; // The bytes of a DOCX file (recommended for web)
   final int fontSize; // Optional font size for displaying the text
   final Function(Exception)? onError; // Optional callback for handling errors
 
   /// Creates a [DocxView] widget.
   ///
-  /// Required to define filePath or file or bytes`
-  /// [filePath] representing the path or URL of the DOCX file to display.
-  /// [file] the file to display
-  /// [bytes] docx bytes to display
-  /// [fontSize] is optional and defaults to 16 if not specified.
-  /// [onError] is an optional callback for handling errors.
+  /// Required to define [filePath] or [bytes].
+  /// - [filePath]: Path or network URL of the DOCX file to display.
+  ///   On web, only network URLs are supported. Use [bytes] for local files on web.
+  /// - [bytes]: DOCX bytes to display. Recommended for web with a file picker.
+  /// - [fontSize]: Optional font size for displaying the text (defaults to 16).
+  /// - [onError]: Optional callback for handling errors.
   const DocxView({
     super.key,
     this.filePath,
-    this.file,
+    @Deprecated('Use filePath or bytes instead') this.file,
     this.bytes,
     this.fontSize = 16,
     this.onError,
@@ -61,40 +76,57 @@ class _DocxViewState extends State<DocxView> {
 
   /// Validates the file path, determines if it's a network or local file, and loads the DOCX content.
   Future<void> _validateAndLoadDocxContent() async {
-    // Check if the file path is empty
+    // Check if any input is provided
     if ((widget.filePath == null || widget.filePath!.isEmpty) &&
-    	widget.file == null && widget.bytes == null) {
-      _handleError(Exception("No input provided. You must specify either filePath, file, or bytes."));
+        widget.file == null && widget.bytes == null) {
+      _handleError(Exception("No input provided. You must specify either filePath or bytes."));
       return;
     }
 
-    // Ensure that only one of the three parameters bytes, file or filePath is provided.
+    // Ensure that only one of the parameters is provided
     if (((widget.bytes != null) && (widget.file != null || widget.filePath != null)) ||
         ((widget.file != null) && (widget.filePath != null))) {
-      _handleError(Exception("Define only filePath, file or bytes"));
+      _handleError(Exception("Define only one of: filePath, file, or bytes"));
       return;
     }
 
-    // Check if the filePath is a network URL or a local file path
-    if (widget.filePath != null && widget.filePath!.startsWith('http')) {
-      // Load content from a network file
-      await _loadDocxContentFromNetwork(widget.filePath!);
-    } else if (widget.bytes != null){
-      // Extract Text directly from bytes
+    // Handle bytes parameter (works on all platforms)
+    if (widget.bytes != null) {
       await _loadDocxBytesContent(widget.bytes!);
+      return;
     }
-    else {
-      // Load content from a local file
-      final file = widget.file ?? File(widget.filePath!);
-      if (!(await file.exists())) {
-        _handleError(Exception("File not found: ${widget.filePath}"));
-        return;
-      }
-      await _loadDocxContent(file);
+
+    // Handle network URLs (works on all platforms)
+    if (widget.filePath != null && widget.filePath!.startsWith('http')) {
+      await _loadDocxContentFromNetwork(widget.filePath!);
+      return;
+    }
+
+    // Handle local file paths
+    if (kIsWeb) {
+      // On web, local file paths are not supported
+      _handleError(Exception(
+          "Direct file path access is not supported on web. "
+          "Please use 'bytes' parameter with a file picker package "
+          "(e.g., file_picker) or provide a network URL."));
+      return;
+    }
+
+    // Load from local file path (mobile/desktop only)
+    if (widget.file != null) {
+      // Deprecated file parameter
+      _handleError(Exception(
+          "The 'file' parameter is deprecated. Please use 'filePath' or 'bytes' instead."));
+      return;
+    }
+
+    if (widget.filePath != null) {
+      await _loadDocxContentFromPath(widget.filePath!);
     }
   }
 
-  /// Loads the content from bytes of Docx file stored locally
+  /// Loads the content from bytes of a DOCX file.
+  /// This method works on all platforms.
   Future<void> _loadDocxBytesContent(Uint8List bytes) async {
     try {
       final content = extractTextFromDocxBytes(bytes);
@@ -107,11 +139,12 @@ class _DocxViewState extends State<DocxView> {
     }
   }
 
-  /// Loads the content from a DOCX file stored locally.
-  Future<void> _loadDocxContent(File file) async {
+  /// Loads the content from a DOCX file path stored locally.
+  /// This method only works on mobile and desktop platforms.
+  Future<void> _loadDocxContentFromPath(String path) async {
     try {
-      // check the file extension  to determine the file type
-      final fileExtension = file.path.split('.').last.toLowerCase();
+      // Check the file extension to determine the file type
+      final fileExtension = path.split('.').last.toLowerCase();
 
       // Check if the file extension is supported (DOCX)
       if (fileExtension != Supporttype.docx) {
@@ -119,7 +152,15 @@ class _DocxViewState extends State<DocxView> {
         return;
       }
 
-      final content = extractTextFromDocx(file);
+      // Check if file exists
+      final exists = await FileIO.fileExists(path);
+      if (!exists) {
+        _handleError(Exception("File not found: $path"));
+        return;
+      }
+
+      // Extract text from the file
+      final content = await extractTextFromDocx(path);
       setState(() {
         fileContent = content;
         isLoading = false;
@@ -130,14 +171,13 @@ class _DocxViewState extends State<DocxView> {
   }
 
   /// Loads the content from a DOCX file available over the network.
+  /// This method works on all platforms including web.
   Future<void> _loadDocxContentFromNetwork(String url) async {
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
-        // Write the network file to a temporary file
-        final tempFile = File('${Directory.systemTemp.path}/temp.docx');
-        await tempFile.writeAsBytes(response.bodyBytes);
-        await _loadDocxContent(tempFile);
+        // Process bytes directly without writing to temp file (web-compatible)
+        await _loadDocxBytesContent(response.bodyBytes);
       } else {
         _handleError(Exception(
             "Failed to load file from network. Status code: ${response.statusCode}"));

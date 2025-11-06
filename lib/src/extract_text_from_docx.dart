@@ -1,12 +1,19 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:xml/xml.dart' as xml;
 import 'dart:convert';
 
-/// Read bytes in file and send it to become ZIP archive
-String extractTextFromDocx(File file) {
-    return extractTextFromDocxBytes(file.readAsBytesSync());
+// Conditional imports for platform-specific file operations
+import 'file_io_stub.dart'
+    if (dart.library.io) 'file_io_mobile.dart'
+    if (dart.library.html) 'file_io_web.dart';
+
+/// Read bytes from file path and extract text from DOCX.
+/// This method works on mobile and desktop platforms.
+/// On web, use [extractTextFromDocxBytes] directly with bytes from a file picker.
+Future<String> extractTextFromDocx(String filePath) async {
+  final bytes = await FileIO.readFileBytes(filePath);
+  return extractTextFromDocxBytes(bytes);
 }
 
 /// Extracts text content from a DOCX file.
