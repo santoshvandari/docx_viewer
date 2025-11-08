@@ -12,6 +12,9 @@ jobs:
     name: Check CHANGELOG.md Updated
     runs-on: ubuntu-latest
     if: "!contains(github.event.pull_request.labels.*.name, 'no-changelog')"
+    permissions:
+      contents: read
+      pull-requests: write
     
     steps:
       - name: Checkout code
