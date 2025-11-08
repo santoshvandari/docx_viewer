@@ -1,0 +1,315 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  analyze:
+    name: Analyze & Format Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Verify formatting
+        run: dart format --set-exit-if-changed .
+
+      - name: Analyze project source
+        run: flutter analyze --no-fatal-infos
+
+      - name: Check for outdated dependencies
+        run: flutter pub outdated
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: analyze
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run tests
+        run: flutter test --coverage
+
+      - name: Generate coverage report
+        if: github.event_name == 'pull_request'
+        run: |
+          dart pub global activate coverage
+          dart pub global run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
+          
+      - name: Generate coverage summary
+        if: github.event_name == 'pull_request'
+        run: |
+          # Install lcov if not available
+          sudo apt-get update
+          sudo apt-get install -y lcov
+          
+          # Generate summary
+          lcov --summary coverage/lcov.info > coverage_summary.txt 2>&1 || true
+          
+          # Parse coverage percentage
+          COVERAGE=$(grep -oP 'lines......: \K[0-9.]+' coverage_summary.txt || echo "0")
+          
+          # Create a detailed report
+          echo "## 📊 Test Coverage Report" > coverage_report.md
+          echo "" >> coverage_report.md
+          echo "### Overall Coverage: **${COVERAGE}%**" >> coverage_report.md
+          echo "" >> coverage_report.md
+          
+          # Add coverage badge
+          if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+            echo "![Coverage](https://img.shields.io/badge/coverage-${COVERAGE}%25-brightgreen)" >> coverage_report.md
+          elif (( $(echo "$COVERAGE >= 60" | bc -l) )); then
+            echo "![Coverage](https://img.shields.io/badge/coverage-${COVERAGE}%25-yellow)" >> coverage_report.md
+          else
+            echo "![Coverage](https://img.shields.io/badge/coverage-${COVERAGE}%25-red)" >> coverage_report.md
+          fi
+          
+          echo "" >> coverage_report.md
+          echo "### Details" >> coverage_report.md
+          echo "\`\`\`" >> coverage_report.md
+          cat coverage_summary.txt >> coverage_report.md
+          echo "\`\`\`" >> coverage_report.md
+          
+          # Generate per-file coverage if available
+          echo "" >> coverage_report.md
+          echo "### File Coverage" >> coverage_report.md
+          echo "\`\`\`" >> coverage_report.md
+          lcov --list coverage/lcov.info >> coverage_report.md 2>&1 || echo "Detailed file coverage not available" >> coverage_report.md
+          echo "\`\`\`" >> coverage_report.md
+
+      - name: Comment PR with coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('coverage_report.md', 'utf8');
+            
+            // Find existing coverage comment
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('📊 Test Coverage Report')
+            );
+            
+            const commentBody = `${report}\n\n---\n*Updated: ${new Date().toUTCString()}*`;
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                comment_id: botComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: commentBody
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: commentBody
+              });
+            }
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage/
+            coverage_report.md
+          retention-days: 30
+
+  package-analysis:
+    name: Package Analysis
+    runs-on: ubuntu-latest
+    needs: analyze
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run package analysis
+        run: |
+          dart pub global activate pana
+          pana --no-warning --exit-code-threshold 0
+
+      - name: Dry run pub publish
+        run: flutter pub publish --dry-run
+
+  build-example:
+    name: Build Example App
+    runs-on: ${{ matrix.os }}
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            build-command: flutter build web
+            platform: web
+          - os: macos-latest
+            build-command: flutter build ios --no-codesign
+            platform: ios
+          - os: windows-latest
+            build-command: flutter build windows
+            platform: windows
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies (example)
+        working-directory: ./example
+        run: flutter pub get
+
+      - name: Build ${{ matrix.platform }}
+        working-directory: ./example
+        run: ${{ matrix.build-command }}
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Check for known security issues
+        run: |
+          dart pub global activate dependency_validator
+          dependency_validator
+
+  lint-report:
+    name: Generate Lint Report
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run analyzer and save output
+        run: |
+          flutter analyze > analyze_report.txt 2>&1 || true
+          
+          # Create formatted report
+          echo "## 🔍 Static Analysis Report" > lint_report.md
+          echo "" >> lint_report.md
+          echo "\`\`\`" >> lint_report.md
+          cat analyze_report.txt >> lint_report.md
+          echo "\`\`\`" >> lint_report.md
+          
+      - name: Comment PR with analysis results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('lint_report.md', 'utf8');
+            
+            // Find existing lint comment
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🔍 Static Analysis Report')
+            );
+            
+            const commentBody = `${report}\n\n---\n*Updated: ${new Date().toUTCString()}*`;
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                comment_id: botComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: commentBody
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: commentBody
+              });
+            }

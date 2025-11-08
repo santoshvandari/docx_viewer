@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://pub.dev/packages/docx_viewer
+    about: Check the package documentation on pub.dev
+  - name: 💬 Discussions
+    url: https://github.com/santoshvandari/docx_viewer/discussions
+    about: Ask questions and discuss with the community
+  - name: ❓ General Questions
+    url: https://github.com/santoshvandari/docx_viewer/discussions/new?category=q-a
+    about: Ask general questions about using docx_viewer

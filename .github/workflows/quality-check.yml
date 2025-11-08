@@ -1,0 +1,108 @@
+name: Code Quality Check
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  quality-check:
+    name: Weekly Code Quality Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run static analysis
+        run: flutter analyze --no-fatal-infos > analysis.txt 2>&1 || true
+
+      - name: Run tests with coverage
+        run: flutter test --coverage
+
+      - name: Check test coverage
+        run: |
+          dart pub global activate coverage
+          dart pub global run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --packages=.dart_tool/package_config.json --report-on=lib
+          
+          # Calculate coverage percentage
+          COVERAGE=$(lcov --summary coverage/lcov.info 2>&1 | grep "lines" | awk '{print $2}')
+          echo "Current test coverage: $COVERAGE"
+          
+          # You can set a minimum coverage threshold here
+          # THRESHOLD=80
+          # if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+          #   echo "Coverage $COVERAGE% is below threshold $THRESHOLD%"
+          #   exit 1
+          # fi
+
+      - name: Check for code smells
+        run: |
+          # Check for TODO comments
+          echo "## TODO Comments Found:"
+          grep -r "TODO" lib/ || echo "No TODO comments found"
+          
+          # Check for FIXME comments
+          echo "## FIXME Comments Found:"
+          grep -r "FIXME" lib/ || echo "No FIXME comments found"
+          
+          # Check for deprecated API usage
+          echo "## Checking for deprecated API usage..."
+          flutter analyze --no-fatal-infos | grep -i "deprecated" || echo "No deprecated API usage found"
+
+      - name: Check dependencies
+        run: |
+          echo "## Checking for outdated dependencies..."
+          flutter pub outdated
+
+      - name: Generate report
+        if: always()
+        run: |
+          echo "# Code Quality Report - $(date)" > quality_report.md
+          echo "" >> quality_report.md
+          echo "## Static Analysis" >> quality_report.md
+          cat analysis.txt >> quality_report.md || echo "No analysis output" >> quality_report.md
+          echo "" >> quality_report.md
+          echo "## Dependencies" >> quality_report.md
+          flutter pub outdated >> quality_report.md || echo "All dependencies up to date" >> quality_report.md
+
+      - name: Upload quality report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-report
+          path: quality_report.md
+          retention-days: 30
+
+      - name: Create issue if quality check fails
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let report = 'No report available';
+            
+            try {
+              report = fs.readFileSync('quality_report.md', 'utf8');
+            } catch (e) {
+              console.log('Could not read quality report');
+            }
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '⚠️ Weekly Code Quality Check Failed',
+              body: `The weekly code quality check has detected issues.\n\n${report}`,
+              labels: ['quality', 'automated']
+            });
