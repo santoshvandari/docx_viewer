@@ -8,6 +8,7 @@ This directory contains GitHub Actions workflows and templates for the docx_view
   - `ci.yml` - Main CI pipeline (runs on PRs to main/dev)
   - `publish.yml` - Manual package publishing workflow
   - `quality-check.yml` - Weekly code quality audit
+  - `quality-check.yml` - Weekly code quality audit
 
 - **ISSUE_TEMPLATE/** - Issue and PR templates
   - `bug_report.yml` - Bug report template
@@ -38,6 +39,15 @@ This directory contains GitHub Actions workflows and templates for the docx_view
 - Validates version consistency
 - Supports dry-run mode
 - Creates Git tags and GitHub releases
+
+### 3. Quality Check (`quality-check.yml`)
+**Triggers:** Weekly (Mondays 9 AM UTC) or manual
+
+**Purpose:** Weekly code quality audit
+- Runs comprehensive analysis
+- Generates test coverage reports
+- Checks for code smells (TODO/FIXME)
+- Creates issues if quality degrades
 
 ### 3. Quality Check (`quality-check.yml`)
 **Triggers:** Weekly (Mondays 9 AM UTC) or manual
