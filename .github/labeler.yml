@@ -1,0 +1,34 @@
+# Automatic labeling based on file paths
+# See: https://github.com/actions/labeler
+
+'documentation':
+  - '**/*.md'
+  - 'docs/**/*'
+
+'dependencies':
+  - 'pubspec.yaml'
+  - 'example/pubspec.yaml'
+
+'ci':
+  - '.github/workflows/**'
+  - '.github/**'
+
+'lib':
+  - 'lib/**/*'
+
+'example':
+  - 'example/**/*'
+
+'tests':
+  - 'test/**/*'
+  - 'example/test/**/*'
+
+'web':
+  - 'lib/src/file_io_web.dart'
+  - '**/*.html'
+  - '**/*.js'
+
+'mobile':
+  - 'lib/src/file_io_mobile.dart'
+  - 'android/**/*'
+  - 'ios/**/*'

@@ -1,0 +1,60 @@
+name: Stale Issues & PRs
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Daily at midnight
+  workflow_dispatch:
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    
+    steps:
+      - name: Mark stale issues and PRs
+        uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          
+          # Issues config
+          stale-issue-message: |
+            👋 This issue has been automatically marked as stale because it has not had recent activity.
+            
+            It will be closed in **14 days** if no further activity occurs.
+            
+            If this is still relevant, please:
+            - Add a comment to keep it open
+            - Provide additional context or updates
+            
+            Thank you for your contribution! 🙏
+          close-issue-message: |
+            This issue was automatically closed due to inactivity.
+            
+            If you believe this is still relevant, please feel free to reopen it with additional context.
+          stale-issue-label: 'stale'
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+          exempt-issue-labels: 'pinned,security,help wanted,good first issue,enhancement'
+          
+          # PRs config
+          stale-pr-message: |
+            👋 This pull request has been automatically marked as stale because it has not had recent activity.
+            
+            It will be closed in **7 days** if no further activity occurs.
+            
+            To keep this PR open, please:
+            - Push new commits
+            - Respond to review comments
+            - Add a comment explaining the status
+            
+            Thank you for your contribution! 🙏
+          close-pr-message: |
+            This pull request was automatically closed due to inactivity.
+            
+            Feel free to reopen it when you're ready to continue working on it.
+          stale-pr-label: 'stale'
+          days-before-pr-stale: 30
+          days-before-pr-close: 7
+          exempt-pr-labels: 'pinned,security,work-in-progress'

@@ -1,0 +1,101 @@
+name: Release Notes Generator
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to generate release notes for'
+        required: true
+        type: string
+
+jobs:
+  generate-release-notes:
+    name: Generate Release Notes
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version info
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="${{ github.event.inputs.tag }}"
+          fi
+          
+          VERSION=${TAG#v}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Extract changelog for version
+        id: changelog
+        run: |
+          # Extract the section for this version from CHANGELOG.md
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          awk "/## \[$VERSION\]/,/## \[/" CHANGELOG.md | head -n -1 > release_notes.md
+          
+          if [ ! -s release_notes.md ]; then
+            echo "## What's Changed" > release_notes.md
+            echo "" >> release_notes.md
+            echo "See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details." >> release_notes.md
+          fi
+
+      - name: Generate contributor list
+        run: |
+          # Get previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 ${{ steps.version.outputs.tag }}^ 2>/dev/null || git rev-list --max-parents=0 HEAD)
+          
+          echo "" >> release_notes.md
+          echo "## 👥 Contributors" >> release_notes.md
+          echo "" >> release_notes.md
+          
+          # Get list of contributors
+          git log $PREV_TAG..${{ steps.version.outputs.tag }} --format='%aN' | sort -u | while read name; do
+            echo "- @$name" >> release_notes.md
+          done
+
+      - name: Add installation instructions
+        run: |
+          echo "" >> release_notes.md
+          echo "## 📦 Installation" >> release_notes.md
+          echo "" >> release_notes.md
+          echo '```yaml' >> release_notes.md
+          echo 'dependencies:' >> release_notes.md
+          echo "  docx_viewer: ^${{ steps.version.outputs.version }}" >> release_notes.md
+          echo '```' >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## 📚 Documentation" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "- [pub.dev](https://pub.dev/packages/docx_viewer)" >> release_notes.md
+          echo "- [API Docs](https://pub.dev/documentation/docx_viewer/latest/)" >> release_notes.md
+          echo "- [README](https://github.com/${{ github.repository }}/blob/main/README.md)" >> release_notes.md
+
+      - name: Update release notes
+        if: github.event_name == 'release'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const releaseNotes = fs.readFileSync('release_notes.md', 'utf8');
+            
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: context.payload.release.id,
+              body: releaseNotes
+            });
+
+      - name: Upload release notes artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes-${{ steps.version.outputs.version }}
+          path: release_notes.md
+          retention-days: 90
