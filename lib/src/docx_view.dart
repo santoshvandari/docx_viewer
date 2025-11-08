@@ -36,7 +36,7 @@ import 'file_io_stub.dart'
 /// ```
 class DocxView extends StatefulWidget {
   final String?
-  filePath; // The path to the DOCX file or URL (local paths not supported on web)
+      filePath; // The path to the DOCX file or URL (local paths not supported on web)
   @Deprecated(
     'Use filePath or bytes instead. This parameter will be removed in a future version.',
   )

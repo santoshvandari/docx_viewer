@@ -39,10 +39,8 @@ String extractTextFromDocxBytes(Uint8List bytes) {
 
   for (final paragraph in document.findAllElements('w:p')) {
     // Extract and join all text nodes within the paragraph
-    final textContent = paragraph
-        .findAllElements('w:t')
-        .map((node) => node.innerText)
-        .join();
+    final textContent =
+        paragraph.findAllElements('w:t').map((node) => node.innerText).join();
 
     // Check for numbering information in the paragraph
     final numIdNode = paragraph.findElements('w:numId').firstOrNull;
@@ -57,9 +55,8 @@ String extractTextFromDocxBytes(Uint8List bytes) {
     }
 
     // Add numbering if applicable
-    final formattedText = (numId != null)
-        ? '$number. $textContent'
-        : textContent;
+    final formattedText =
+        (numId != null) ? '$number. $textContent' : textContent;
     extractedText.add(formattedText);
   }
 
