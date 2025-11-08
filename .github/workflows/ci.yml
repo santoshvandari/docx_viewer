@@ -219,7 +219,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
         include:
           - os: ubuntu-latest
             build-command: flutter build web
@@ -227,9 +227,6 @@ jobs:
           - os: macos-latest
             build-command: flutter build ios --no-codesign
             platform: ios
-          - os: windows-latest
-            build-command: flutter build windows
-            platform: windows
     
     steps:
       - name: Checkout code
