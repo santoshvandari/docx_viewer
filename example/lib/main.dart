@@ -137,9 +137,8 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                   'Running on: ${kIsWeb ? "Web Platform" : "Mobile/Desktop Platform"}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: kIsWeb
-                        ? Colors.blue.shade900
-                        : Colors.green.shade900,
+                    color:
+                        kIsWeb ? Colors.blue.shade900 : Colors.green.shade900,
                   ),
                 ),
               ],
