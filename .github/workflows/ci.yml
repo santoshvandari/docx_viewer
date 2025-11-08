@@ -11,7 +11,7 @@ on:
       - dev
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
   issues: write
 
@@ -23,6 +23,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -34,8 +37,28 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Verify formatting
-        run: dart format --set-exit-if-changed .
+      - name: Format code
+        run: dart format .
+
+      - name: Check for formatting changes
+        id: verify_diff
+        run: |
+          if ! git diff --quiet --exit-code; then
+            echo "formatted=true" >> $GITHUB_OUTPUT
+            echo "✨ Code was auto-formatted"
+          else
+            echo "formatted=false" >> $GITHUB_OUTPUT
+            echo "✅ Code is already properly formatted"
+          fi
+
+      - name: Commit formatted code
+        if: steps.verify_diff.outputs.formatted == 'true' && github.event_name == 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "style: auto-format code with dart format [skip ci]"
+          git push
 
       - name: Analyze project source
         run: flutter analyze --no-fatal-infos
