@@ -81,6 +81,7 @@ class _DocxViewState extends State<DocxView> {
   Future<void> _validateAndLoadDocxContent() async {
     // Check if any input is provided
     if ((widget.filePath == null || widget.filePath!.isEmpty) &&
+        // ignore: deprecated_member_use_from_same_package
         widget.file == null &&
         widget.bytes == null) {
       _handleError(
@@ -93,7 +94,9 @@ class _DocxViewState extends State<DocxView> {
 
     // Ensure that only one of the parameters is provided
     if (((widget.bytes != null) &&
+            // ignore: deprecated_member_use_from_same_package
             (widget.file != null || widget.filePath != null)) ||
+        // ignore: deprecated_member_use_from_same_package
         ((widget.file != null) && (widget.filePath != null))) {
       _handleError(Exception("Define only one of: filePath, file, or bytes"));
       return;
@@ -125,6 +128,7 @@ class _DocxViewState extends State<DocxView> {
     }
 
     // Load from local file path (mobile/desktop only)
+    // ignore: deprecated_member_use_from_same_package
     if (widget.file != null) {
       // Deprecated file parameter
       _handleError(
