@@ -1,0 +1,51 @@
+# Automatic labeling based on file paths
+# Configuration for actions/labeler@v5
+# See: https://github.com/actions/labeler
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file: '**/*.md'
+  - changed-files:
+    - any-glob-to-any-file: 'docs/**/*'
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file: 'pubspec.yaml'
+  - changed-files:
+    - any-glob-to-any-file: 'example/pubspec.yaml'
+
+ci:
+  - changed-files:
+    - any-glob-to-any-file: '.github/workflows/**'
+  - changed-files:
+    - any-glob-to-any-file: '.github/**'
+
+lib:
+  - changed-files:
+    - any-glob-to-any-file: 'lib/**/*'
+
+example:
+  - changed-files:
+    - any-glob-to-any-file: 'example/**/*'
+
+tests:
+  - changed-files:
+    - any-glob-to-any-file: 'test/**/*'
+  - changed-files:
+    - any-glob-to-any-file: 'example/test/**/*'
+
+web:
+  - changed-files:
+    - any-glob-to-any-file: 'lib/src/file_io_web.dart'
+  - changed-files:
+    - any-glob-to-any-file: '**/*.html'
+  - changed-files:
+    - any-glob-to-any-file: '**/*.js'
+
+mobile:
+  - changed-files:
+    - any-glob-to-any-file: 'lib/src/file_io_mobile.dart'
+  - changed-files:
+    - any-glob-to-any-file: 'android/**/*'
+  - changed-files:
+    - any-glob-to-any-file: 'ios/**/*'

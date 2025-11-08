@@ -1,0 +1,101 @@
+name: Changelog Checker
+
+on:
+  pull_request:
+    types: [opened, synchronize, labeled, unlabeled]
+    branches:
+      - main
+      - dev
+
+jobs:
+  changelog-check:
+    name: Check CHANGELOG.md Updated
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.pull_request.labels.*.name, 'no-changelog')"
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if CHANGELOG.md was modified
+        id: changelog
+        run: |
+          # Get list of changed files
+          git fetch origin ${{ github.base_ref }}
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          
+          if echo "$CHANGED_FILES" | grep -q "CHANGELOG.md"; then
+            echo "changelog_updated=true" >> $GITHUB_OUTPUT
+          else
+            echo "changelog_updated=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment on PR if CHANGELOG not updated
+        if: steps.changelog.outputs.changelog_updated == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('📝 CHANGELOG Update Required')
+            );
+            
+            const message = `## 📝 CHANGELOG Update Required
+
+⚠️ This PR does not include changes to \`CHANGELOG.md\`.
+
+**Please update the CHANGELOG with:**
+- A brief description of your changes
+- The PR number
+- Your GitHub username (for attribution)
+
+**Example:**
+\`\`\`markdown
+## [Unreleased]
+
+### Added
+- New feature XYZ (#123) by @username
+
+### Fixed
+- Bug ABC (#124) by @username
+\`\`\`
+
+**Note:** If this PR doesn't require a changelog entry (e.g., docs only, CI changes), add the \`no-changelog\` label to skip this check.
+
+---
+*This is an automated reminder to help maintain project history.*`;
+            
+            if (!botComment) {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message
+              });
+            }
+
+      - name: Add label if CHANGELOG updated
+        if: steps.changelog.outputs.changelog_updated == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['changelog-updated']
+            });

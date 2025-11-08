@@ -1,0 +1,78 @@
+name: Auto Label PRs
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Auto label based on files changed
+        uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/labeler.yml
+
+      - name: Label based on PR size
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            const additions = pr.additions;
+            const deletions = pr.deletions;
+            const changes = additions + deletions;
+            
+            let sizeLabel = '';
+            if (changes < 10) sizeLabel = 'size/XS';
+            else if (changes < 50) sizeLabel = 'size/S';
+            else if (changes < 200) sizeLabel = 'size/M';
+            else if (changes < 500) sizeLabel = 'size/L';
+            else sizeLabel = 'size/XL';
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [sizeLabel]
+            });
+
+      - name: Label breaking changes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            const title = pr.title.toLowerCase();
+            const body = pr.body ? pr.body.toLowerCase() : '';
+            
+            // Check for breaking change indicators
+            const hasBreakingChange = title.includes('breaking') || 
+                                      title.includes('!:') ||
+                                      body.includes('breaking change') ||
+                                      body.includes('[x] 💥 breaking change');
+            
+            if (hasBreakingChange) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['breaking-change']
+              });
+            }
