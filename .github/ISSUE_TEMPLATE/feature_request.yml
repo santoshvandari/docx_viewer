@@ -1,0 +1,115 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement for docx_viewer
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+assignees:
+  - santoshvandari
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please fill out the form below.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear and concise description of what the problem is.
+      placeholder: "I'm always frustrated when..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear and concise description of what you want to happen.
+      placeholder: Describe your proposed solution
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Describe alternatives you've considered
+      description: A clear and concise description of any alternative solutions or features you've considered.
+      placeholder: Any alternative approaches?
+    validations:
+      required: false
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Describe your use case and how this feature would benefit you
+      placeholder: How would you use this feature?
+    validations:
+      required: true
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Code Example
+      description: If applicable, provide a code example of how you envision using this feature
+      placeholder: |
+        ```dart
+        // Example usage
+        DocxView(
+          filePath: 'document.docx',
+          newFeature: true,
+        )
+        ```
+      render: dart
+    validations:
+      required: false
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Target Platform(s)
+      description: Which platform(s) should this feature support?
+      multiple: true
+      options:
+        - All platforms
+        - Android
+        - iOS
+        - Web
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would improve my workflow
+        - High - Blocking my use case
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, or examples about the feature request
+      placeholder: Any additional information
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues to make sure this is not a duplicate
+          required: true
+        - label: This feature would be useful to other users, not just me
+          required: true
+        - label: I am willing to help implement this feature
+          required: false
