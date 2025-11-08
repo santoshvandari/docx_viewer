@@ -32,7 +32,7 @@ This directory contains GitHub Actions workflows and templates for the docx_view
 - ✅ **Analyze & Format Check** - Code formatting and static analysis
 - 🧪 **Run Tests** - Unit tests with coverage reporting (comments on PR)
 - 📦 **Package Analysis** - Validates package quality with `pana`
-- 🏗️ **Build Example** - Builds on Web, iOS, and Windows
+- 🏗️ **Build Example** - Builds on Web and iOS
 - 🔒 **Security Scan** - Checks for vulnerabilities
 - 📝 **Lint Report** - Posts analysis results as PR comment
 
