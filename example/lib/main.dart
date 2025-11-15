@@ -127,7 +127,7 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
             color: kIsWeb ? Colors.blue.shade50 : Colors.green.shade50,
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   kIsWeb ? Icons.web : Icons.phone_android,
                   size: 20,
                   color: kIsWeb ? Colors.blue : Colors.green,
@@ -266,11 +266,11 @@ class _DocumentViewerPageState extends State<DocumentViewerPage> {
                                       color: Colors.blue.shade700,
                                     ),
                                     const SizedBox(width: 8),
-                                    Text(
+                                    const Text(
                                       kIsWeb
                                           ? "Web Platform Features"
                                           : "Mobile/Desktop Features",
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
