@@ -1,5 +1,9 @@
 ## Changelog
 
+## 1.0.1
+- **Remove Deprecated Features**: Removed support for deprecated `file` parameter.
+- **Bug Fixes**: Fixed minor bugs related to platform detection and error handling.
+
 ## 1.0.0
 - **Web Support Added**: The package now supports all Flutter platforms including Web!
 - **Platform-Specific Implementations**: Added conditional imports for seamless cross-platform compatibility

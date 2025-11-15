@@ -1,3 +1,3 @@
-library docx_viewer;
+// library docx_viewer;
 
 export 'src/docx_view.dart';
